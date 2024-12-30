@@ -11,6 +11,7 @@ MotorDC::MotorDC()
     parameters.TIMER_HANDLE = NULL;
     parameters.DIR_GPIO_PORT = nullptr;
     parameters.DIR_GPIO_PIN = 0;
+    parameters.DIR_POL = 0;
     parameters.ENA_GPIO_PORT = nullptr;
     parameters.ENA_GPIO_PIN = 0;
     parameters.ENA_ACTIVE_MODE = 0;
@@ -20,17 +21,15 @@ MotorDC::MotorDC()
 
 bool MotorDC::init(void)
 {
-    if(setPwmFrequency(parameters.PWM_Frequency) == false)
-    {
-        return false;
-    }
-
     if(_checkParameters() == false)
     {
         return false;
     }
 
-    _period = (1000000.0 / (float)parameters.PWM_Frequency);
+    if(setPwmFrequency(parameters.PWM_Frequency) == false)
+    {
+        return false;
+    }
 
     switch(parameters.CHANNEL_NUM)
     {
@@ -92,7 +91,7 @@ bool MotorDC::init(void)
         GPIO_InitStruct.Pull = GPIO_NOPULL;
         GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
         HAL_GPIO_Init(parameters.DIR_GPIO_PORT, &GPIO_InitStruct);
-        HAL_GPIO_WritePin(parameters.DIR_GPIO_PORT, parameters.DIR_GPIO_PIN, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(parameters.DIR_GPIO_PORT, parameters.DIR_GPIO_PIN, _normalDirection);
     }
 
     GPIO_InitStruct = {0};
@@ -122,6 +121,7 @@ bool MotorDC::clear(void)
     }
 
     write(0);
+    disable();
 
     if(HAL_TIM_PWM_Stop(parameters.TIMER_HANDLE, _channelAddress) != HAL_OK)
     {
@@ -208,7 +208,7 @@ bool MotorDC::setPwmFrequency(uint32_t value)
     parameters.PWM_Frequency = ((float)parameters.CLOCK_FREQUENCY / ((ARR + 1) * (PSC + 1)));
 
     _period = (1000000.0 / (float)parameters.PWM_Frequency);
-    _resolution = _period / (float)parameters.TIMER_HANDLE->Instance->ARR;
+    _resolution = 100.0 / (float)parameters.TIMER_HANDLE->Instance->ARR;
 
     return true;
 }
@@ -264,9 +264,11 @@ void MotorDC::write(float dutyCycle)
         }
     }
 
-    value.PWM = (abs_dutycycle / 100.0) * (parameters.TIMER_HANDLE->Instance->ARR + 1);
+    value.dutyCycle = abs_dutycycle;
 
-    if(value.PWM != 0)
+    value.PWM = (value.dutyCycle / 100.0) * (parameters.TIMER_HANDLE->Instance->ARR + 1);
+
+    if(value.PWM >= 1)
     {
         value.PWM = value.PWM - 1;
     }

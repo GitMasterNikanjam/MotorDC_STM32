@@ -45,9 +45,10 @@
 // Define Classes:
 
 /**
- * @class Servo
- * @brief The class for advanced PWM generation by timers.
- * @note PWM signal can set with 1 microseconds resolution.
+ * @class MotorDC
+ * @brief The class for advanced Motor DC control.
+ * @note - This class provide PWM, Direction and Enable signal for control Motor DC driver.
+ * @note - The default PWM frequency is 1000Hz.
  */
 class MotorDC
 {
@@ -59,15 +60,15 @@ public:
     /**
      * @struct ParametersStructure
      * @brief Parameters structure.
-     * @note Any changes to these parameters require Servo object re-initialization afterward.
+     * @note Any changes to these parameters require object re-initialization afterward.
      */
     struct ParametersStructure
     {
         /**
          * @brief Hal timer handle pointer. eg: htim1, htim2, ...
-         * @note - Set this timer handler carefully because the Servo object generate PWM by this handler.
+         * @note - Set this timer handler carefully because the object generate PWM by this handler.
          * 
-         * @note - The Timer handler must be configured and initialized before and outside of the Servo class.
+         * @note - The Timer handler must be configured and initialized before and outside of the object.
          * 
          * @note - The PWM frequency can be set dynamically using the setPwmFrequency() method.
          */
@@ -177,6 +178,7 @@ public:
 
     /**
      * @brief Constructor. Init some variables and parameters.
+     * @note - The default PWM frequency is 1000Hz.
      */
     MotorDC();
 
@@ -205,6 +207,9 @@ public:
      */
     bool setPwmFrequency(uint32_t value = 1000);
 
+    /// @brief Get the PWM dutycycle signal control resolution. [%]
+    float getResolution(void) {return _resolution;};
+
     /**
      * @brief Set Current PWM dutycycle. [%]
      * @param dutyCycle: PWM dutycycle value. [%]
@@ -231,7 +236,7 @@ private:
     float _period;
 
     /**
-     * @brief PWM signal control resolution. [us]
+     * @brief PWM dutycycle signal control resolution. [%]
      */
     float _resolution;
 
